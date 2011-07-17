@@ -1,0 +1,7 @@
+target
+project/boot
+lib_managed
+.idea
+*.class
+*.iml
+project/plugins/
