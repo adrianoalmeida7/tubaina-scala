@@ -15,12 +15,15 @@ class TubainaParser extends JavaTokenParsers {
       case name ~ Some(intro) ~ sections => Chapter(name, intro, sections)
       case name ~ None ~ sections => Chapter(name, NoContent(), sections)
     }
+
   def code:Parser[Code] = "[code]" ~> nonBracket <~ "[/code]" ^^ (x => Code(x))
   def box:Parser[Box] = p("[box "~> nonBracket <~ "]") ~ content <~ "[/box]" ^^ {case x ~ y => Box(x, y)}
   def java:Parser[Java] = "[java]" ~> nonBracket <~ "[/java]" ^^ (x => Java(x))
   def text:Parser[Text] = "[^\\[]+".r ^^ (x => Text(x.trim()))
 
-  def elem:Parser[Content] = code | java | text | box
+  def note:Parser[Note] = "[note]" ~> content <~ "[/note]" ^^ (x => Note(x))
+
+  def elem:Parser[Content] = code | java | text | box | note
   def content:Parser[Content] =
     elem ~ content ^^ {case x ~ t => x :: t} |
     elem
@@ -51,6 +54,8 @@ case class Code(val content:String) extends Content
 case class Java(val content:String) extends Content
 
 case class Text(val content:String) extends Content
+
+case class Note(val content:Content) extends Content
 
 case class Multi(val contents:List[Content]) extends Content {
   override def :: (content:Content) = Multi(content :: contents)

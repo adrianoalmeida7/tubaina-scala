@@ -24,10 +24,13 @@ class TubainaParserSpec extends FlatSpec {
       asdfjalsdkfja
       [chapter Outro capítulo]
 
+      [note]
+        Isso é uma nota!
+      [/note]
       Introducao do chapter 2
       [section hahaha]
       [box hahaha]
-      [code]asdlfajsdflk[/code]
+        [code]asdlfajsdflk[/code]
       [/box]
     """
 
