@@ -26,6 +26,9 @@ class TubainaParserSpec extends FlatSpec {
 
       [note]
         Isso é uma nota!
+        [code]
+           Um Sysout de código nesse note
+        [/code]
       [/note]
       Introducao do chapter 2
       [section hahaha]
