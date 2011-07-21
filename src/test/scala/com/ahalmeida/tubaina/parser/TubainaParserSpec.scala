@@ -38,6 +38,7 @@ class TubainaParserSpec extends FlatSpec {
     """
 
     val parser = new TubainaParser
-    parser.faz(tubainaDoc)
+    val parsed = parser.faz(tubainaDoc)
+    println(parsed)
   }
 }

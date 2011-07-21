@@ -1,6 +1,7 @@
 package com.ahalmeida.tubaina.parser
 
 import util.parsing.combinator._
+import java.lang.RuntimeException
 
 class TubainaParser extends JavaTokenParsers {
 
@@ -38,8 +39,13 @@ class TubainaParser extends JavaTokenParsers {
   def p(s:Parser[String]) = s
 
   def faz(toParse:String) = {
-    val parsed = parseAll(document, toParse)
-    println(parsed)
+    parseAll(document, toParse) match {
+      case Success(r, q) => r
+      case NoSuccess(message, input) => message match {
+        case _ => throw new RuntimeException(message)
+      }
+    }
+
 
   }
 }
