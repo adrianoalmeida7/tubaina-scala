@@ -1,6 +1,12 @@
 package com.ahalmeida.tubaina.parser
 
 import org.scalatest.FlatSpec
+import br.com.caelum.tubaina.Tubaina
+import br.com.caelum.tubaina.parser.html.SingleHtmlGenerator
+import br.com.caelum.tubaina.parser.html.HtmlParser
+import br.com.caelum.tubaina.ParseType
+import br.com.caelum.tubaina.parser.RegexConfigurator
+import java.io.File
 
 class TubainaParserSpec extends FlatSpec {
 
@@ -19,7 +25,7 @@ class TubainaParserSpec extends FlatSpec {
         blablabla
       [/code]
       [java]
-        hahaha
+        String a = "hahaha";
       [/java]
       asdfjalsdkfja
       [chapter Outro capítulo]
@@ -39,6 +45,8 @@ class TubainaParserSpec extends FlatSpec {
 
     val parser = new TubainaParser
     val parsed = parser.faz(tubainaDoc)
-    println(parsed)
+    
+    val pars = ParseType.HTML.getParser(new RegexConfigurator, true, false)
+    new SingleHtmlGenerator(pars, new File("../tubaina/templates/")).generate(parsed, new File("target"));
   }
 }

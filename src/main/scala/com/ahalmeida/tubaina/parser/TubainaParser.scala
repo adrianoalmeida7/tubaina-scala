@@ -56,7 +56,7 @@ class TubainaParser extends JavaTokenParsers {
     case opts ~ content => new JavaChunk(opts, content)
   }
 
-  def note:Parser[NoteChunk] = "[note]" ~> content <~ "[/note]" ^^ (x => new NoteChunk(null, x))
+  def note:Parser[NoteChunk] = "[note]" ~> content <~ "[/note]" ^^ (x => new NoteChunk(Seq(), x))
 
   def elem:Parser[Chunk] = code | java | paragraph | box | note | exercises
   
