@@ -12,10 +12,25 @@ class TubainaParser extends JavaTokenParsers {
   def nonBracket:Parser[String] = "[^\\[\\]]+".r ^^ (x => x.trim())
 
   def chapter:Parser[Chapter] =
-    p("[chapter " ~> nonBracket <~ "]") ~ (content?) ~ rep(section) ^^ {
+    p("[chapter " ~> nonBracket <~ "]") ~ (content?) ~ (section+) ^^ {
       case name ~ Some(intro) ~ sections => Chapter(name, intro, sections)
       case name ~ None ~ sections => Chapter(name, NoContent(), sections)
     }
+
+  def exercises:Parser[Any] = "[exercises]" ~> (question+) <~ "[/exercises]"
+  def question:Parser[Any] = "[question]" ~> content ~ (answer?) <~ "[/question]"
+  def answer:Parser[Any] = "[answer]" ~> content <~ "[/answer]"
+
+  def bold:Parser[String] = "**" ~> paragraph <~ "**"
+  def em:Parser[String] = "::" ~> paragraph <~ "::"
+  def und:Parser[String] = "__" ~> paragraph <~ "__"
+  def mono:Parser[String] = "%%" ~> paragraph <~ "%%"
+
+  def textElem = text | bold | em | und | mono
+  def paragraph:Parser[Any] =
+     textElem ~ paragraph |
+     textElem
+
 
   def code:Parser[Code] = "[code]" ~> nonBracket <~ "[/code]" ^^ (x => Code(x))
   def box:Parser[Box] = p("[box "~> nonBracket <~ "]") ~ content <~ "[/box]" ^^ {case x ~ y => Box(x, y)}
@@ -24,10 +39,11 @@ class TubainaParser extends JavaTokenParsers {
 
   def note:Parser[Note] = "[note]" ~> content <~ "[/note]" ^^ (x => Note(x))
 
-  def elem:Parser[Content] = code | java | text | box | note
+  def elem:Parser[Content] = code | java | paragraph | box | note | exercises
   def content:Parser[Content] =
     elem ~ content ^^ {case x ~ t => x :: t} |
     elem
+
 
 
   def section:Parser[Section] =
@@ -55,20 +71,20 @@ trait Content {
 }
 case class NoContent() extends Content
 
-case class Box(val name:String, val content:Content) extends Content
-case class Code(val content:String) extends Content
-case class Java(val content:String) extends Content
+case class Box(name:String, content:Content) extends Content
+case class Code(content:String) extends Content
+case class Java(content:String) extends Content
 
-case class Text(val content:String) extends Content
+case class Text(content:String) extends Content
 
-case class Note(val content:Content) extends Content
+case class Note(content:Content) extends Content
 
-case class Multi(val contents:List[Content]) extends Content {
+case class Multi(contents:List[Content]) extends Content {
   override def :: (content:Content) = Multi(content :: contents)
 }
 
-case class TubainaDocument(val chapter:List[Chapter])
+case class TubainaDocument(chapter:List[Chapter])
 
-case class Chapter(val name:String, val intro:Content, val sections:List[Section])
+case class Chapter(name:String, intro:Content, sections:List[Section])
 
-case class Section(val name:String, val content:Content)
+case class Section(name:String, content:Content)
