@@ -6,6 +6,12 @@ resolvers += "jboss" at "https://repository.jboss.org/nexus/content/groups/publi
 
 libraryDependencies <+= scalaVersion((v:String) => "org.scalatest" % ("scalatest_" + v) % "1.6.1" % "test")
 
+libraryDependencies += "junit" % "junit" % "4.9" % "test"
+
+libraryDependencies += "com.novocode" % "junit-interface" % "0.8" % "test"
+
+testOptions += Tests.Argument(TestFrameworks.JUnit, "-q", "-v")
+
 libraryDependencies ++= Seq(
 		"de.java2html" % "java2html" % "5.0",
 	"log4j" % "log4j" % "1.2.12",

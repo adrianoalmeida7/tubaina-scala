@@ -43,7 +43,7 @@ class TubainaParserSpec extends FlatSpec {
       [/box]
     """
 
-    val parser = new TubainaParser
+    val parser = new TubainaParser("livro")
     val parsed = parser.faz(tubainaDoc)
     
     val pars = ParseType.HTML.getParser(new RegexConfigurator, true, false)

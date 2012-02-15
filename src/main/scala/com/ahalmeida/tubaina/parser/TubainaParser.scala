@@ -9,16 +9,16 @@ import br.com.caelum.tubaina.Chapter
 import br.com.caelum.tubaina.Section
 import br.com.caelum.tubaina.Book
 
-class TubainaParser extends JavaTokenParsers {
+class TubainaParser(bookName:String) extends JavaTokenParsers {
 
   def document:Parser[Book] = (chapter+) ^^ {
-    case list => new Book("Hooray", list, false)
+    case list => new Book(bookName, list, false)
   }
 
-  def nonBracket:Parser[String] = "[^\\[\\]]+".r ^^ (x => x.trim())
+  def nonBracket:Parser[String] = "(?ms)[^\\[\\]]+".r ^^ (x => x.trim())
 
   def chapter:Parser[Chapter] =
-    p("[chapter " ~> nonBracket <~ "]") ~ (content?) ~ (section+) ^^ {
+    p("[chapter " ~> nonBracket <~ "]") ~ (content?) ~ (section*) ^^ {
       case name ~ Some(intro) ~ sections => new Chapter(name, new IntroductionChunk(intro), sections, Seq())
       case name ~ None ~ sections => new Chapter(name, new IntroductionChunk(Seq()), sections, Seq())
     }
@@ -39,26 +39,36 @@ class TubainaParser extends JavaTokenParsers {
 //  def em:Parser[Em] = "::" ~> paragraph <~ "::" ^^ {p => Em(p)}
 //  def und:Parser[Und] = "__" ~> paragraph <~ "__" ^^ {p => Und(p)}
 //  def mono:Parser[Mono] = "%%" ~> paragraph <~ "%%" ^^ {p => Mono(p)}
-  def text:Parser[String] = "[^\\[]+".r
+  def text:Parser[String] = "[^\\[]+".r ^^ {x => x.trim()}
 
 //  def textElem:Parser[TextElement] = bold | em | und | mono | text
   
   def paragraph:Parser[ParagraphChunk] = (text) ^^ { x => new ParagraphChunk(x) }
 
 
-  def code:Parser[CodeChunk] = p("[code " ~> nonBracket <~"]" | "[code]" <~ "") ~ nonBracket <~ "[/code]" ^^ {
-    case opts ~ content => new CodeChunk(content, opts) 
+  def code:Parser[CodeChunk] = p("[code " ~> nonBracket <~"]" | "[code]" ~> "") ~ nonBracket <~ "[/code]" ^^ {
+    case opts ~ content => new CodeChunk("\n" + content + "\n", opts) 
   }
   def box:Parser[BoxChunk] = p("[box " ~> nonBracket <~ "]") ~ content <~ "[/box]" ^^ {
     case title ~ chunks => new BoxChunk(title, chunks)
   }
-  def java:Parser[JavaChunk] = p("[java " ~> nonBracket <~"]" | "[java]" <~ "") ~ nonBracket <~ "[/java]" ^^ {
-    case opts ~ content => new JavaChunk(opts, content)
+  def java:Parser[JavaChunk] = p("[java " ~> nonBracket <~"]" | "[java]" ~> "") ~ nonBracket <~ "[/java]" ^^ {
+    case opts ~ content => new JavaChunk(opts, "\n" + content + "\n")
+  }
+  
+  def ruby:Parser[RubyChunk] = p("[ruby " ~> nonBracket <~"]" | "[ruby]" ~> "") ~ nonBracket <~ "[/ruby]" ^^ {
+    case opts ~ content => new RubyChunk("\n" + content + "\n", opts)
   }
 
   def note:Parser[NoteChunk] = "[note]" ~> content <~ "[/note]" ^^ (x => new NoteChunk(Seq(), x))
+  
+  def item:Parser[ItemChunk] = "^\\s*\\* ".r ~> "(.(?!^\\s*\\*|\\[/list\\]))+.".r ^^ {
+    x => new ItemChunk(parse(content, x).get)
+  }
+  
+  def list:Parser[ListChunk] = "[list]" ~> (item+) <~ "[/list]" ^^ (x => new ListChunk("", x))
 
-  def elem:Parser[Chunk] = code | java | paragraph | box | note | exercises
+  def elem:Parser[Chunk] = list | code | java | ruby | paragraph | box | note | exercises
   
   def content:Parser[Seq[Chunk]] = elem+
 
