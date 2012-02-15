@@ -5,3 +5,6 @@ lib_managed
 *.class
 *.iml
 project/plugins/
+.classpath
+.project
+
