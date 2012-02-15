@@ -17,19 +17,26 @@ class TubainaParser extends JavaTokenParsers {
       case name ~ None ~ sections => Chapter(name, NoContent(), sections)
     }
 
-  def exercises:Parser[Any] = "[exercises]" ~> (question+) <~ "[/exercises]"
-  def question:Parser[Any] = "[question]" ~> content ~ (answer?) <~ "[/question]"
-  def answer:Parser[Any] = "[answer]" ~> content <~ "[/answer]"
+  def exercises:Parser[Exercises] = "[exercises]" ~> (question+) <~ "[/exercises]" ^^ {
+    case questions => Exercises(questions)
+  }
+  
+  def question:Parser[Question] = "[question]" ~> content ~ (answer?) <~ "[/question]" ^^ {
+    case content ~ answer => Question (content, answer)
+  }
+  
+  def answer:Parser[Answer] = "[answer]" ~> content <~ "[/answer]" ^^ {
+    case content => Answer(content)
+  }
 
-  def bold:Parser[String] = "**" ~> paragraph <~ "**"
-  def em:Parser[String] = "::" ~> paragraph <~ "::"
-  def und:Parser[String] = "__" ~> paragraph <~ "__"
-  def mono:Parser[String] = "%%" ~> paragraph <~ "%%"
+  def bold:Parser[Bold] = "**" ~> paragraph <~ "**" ^^ {p => Bold(p)}
+  def em:Parser[Em] = "::" ~> paragraph <~ "::" ^^ {p => Em(p)}
+  def und:Parser[Und] = "__" ~> paragraph <~ "__" ^^ {p => Und(p)}
+  def mono:Parser[Mono] = "%%" ~> paragraph <~ "%%" ^^ {p => Mono(p)}
 
-  def textElem = text | bold | em | und | mono
-  def paragraph:Parser[Any] =
-     textElem ~ paragraph |
-     textElem
+  def textElem:Parser[TextElement] = text | bold | em | und | mono
+  
+  def paragraph:Parser[Paragraph] = (textElem+) ^^ { x => Paragraph(x) }
 
 
   def code:Parser[Code] = "[code]" ~> nonBracket <~ "[/code]" ^^ (x => Code(x))
@@ -75,9 +82,23 @@ case class Box(name:String, content:Content) extends Content
 case class Code(content:String) extends Content
 case class Java(content:String) extends Content
 
-case class Text(content:String) extends Content
-
 case class Note(content:Content) extends Content
+
+case class Exercises(question:Seq[Question]) extends Content
+
+case class Question(content:Content, answer:Option[Answer]) extends Content
+
+case class Answer(content:Content) extends Content
+
+case class Text(content:String) extends TextElement
+case class Bold(text: Paragraph) extends TextElement
+case class Em(text: Paragraph) extends TextElement
+case class Und(text: Paragraph) extends TextElement
+case class Mono(text: Paragraph) extends TextElement
+
+case class Paragraph(texts: Seq[TextElement]) extends Content
+
+case class TextElement extends Content
 
 case class Multi(contents:List[Content]) extends Content {
   override def :: (content:Content) = Multi(content :: contents)
