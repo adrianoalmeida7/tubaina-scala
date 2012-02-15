@@ -11,7 +11,7 @@ class TubainaParserSpec extends FlatSpec {
       [chapter Um capítulo novo]
 
       [section Uma nova section]
-      Isso daqui deveria ser um texto do chapter 1
+      **Isso** daqui deveria ::se__r__:: um texto do chapter 1
 
       [section Uma nova section2]
       asdflasdfklj
