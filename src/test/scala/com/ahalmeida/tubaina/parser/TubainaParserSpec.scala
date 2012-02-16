@@ -7,13 +7,15 @@ import br.com.caelum.tubaina.parser.html.HtmlParser
 import br.com.caelum.tubaina.ParseType
 import br.com.caelum.tubaina.parser.RegexConfigurator
 import java.io.File
+import org.scalatest.matchers.ShouldMatchers
+import br.com.caelum.tubaina.parser.MockedParser
 
-class TubainaParserSpec extends FlatSpec {
+class TubainaParserSpec extends FlatSpec with ShouldMatchers {
 
   behavior of "Parser"
 
   it should "parse something" in {
-    val tubainaDoc = """
+    val tubainaDoc = Seq("""
       [chapter Um capítulo novo]
 
       [section Uma nova section]
@@ -28,6 +30,7 @@ class TubainaParserSpec extends FlatSpec {
         String a = "hahaha";
       [/java]
       asdfjalsdkfja
+      """, """
       [chapter Outro capítulo]
 
       [note]
@@ -41,12 +44,28 @@ class TubainaParserSpec extends FlatSpec {
       [box hahaha]
         [code]asdlfajsdflk[/code]
       [/box]
-    """
+    """)
 
     val parser = new TubainaParser("livro")
-    val parsed = parser.faz(tubainaDoc)
+    val parsed = parser.generate(tubainaDoc:_*)
     
     val pars = ParseType.HTML.getParser(new RegexConfigurator, true, false)
     new SingleHtmlGenerator(pars, new File("../tubaina/templates/")).generate(parsed, new File("target"));
+  }
+  
+  it should "accepts paragraphs" in {
+    val text = "abc\n\ndef"
+      
+    val parser = new TubainaParser("parser")
+    
+    parser.parse(parser.paragraph, text) match {
+      case parser.Success(a, b) => 
+        a.getContent(new MockedParser) should be === "abc"
+    }	
+    parser.parse(parser.paragraph+, text) match {
+	  case parser.Success(a, b) => 
+	    a(0).getContent(new MockedParser) should be === "abc"
+    	a(1).getContent(new MockedParser) should be === "def"
+    }	
   }
 }
