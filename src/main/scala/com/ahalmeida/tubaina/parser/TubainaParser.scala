@@ -11,7 +11,7 @@ import br.com.caelum.tubaina.Book
 import scala.annotation.varargs
 import br.com.caelum.tubaina.TubainaException
 
-class TubainaParser(bookName:String) extends JavaTokenParsers {
+class TubainaParser(bookName:String) extends RegexParsers {
 
   var _skip = true
   override def skipWhitespace = _skip
