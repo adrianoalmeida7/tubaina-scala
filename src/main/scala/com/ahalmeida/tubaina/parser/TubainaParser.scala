@@ -98,8 +98,8 @@ class TubainaParser(bookName:String) extends RegexParsers {
       new ImageChunk(path, opts.getOrElse("").trim(), width) 
   }
   
-  def item:Parser[ItemChunk] = "\\*".r ~> "((?!^\\s*\\*|\\[/?list\\]).)+".r ~ (list?) ^^ {
-    case x ~ lst => new ItemChunk(parseAll(content, x).get ++ lst)
+  def item:Parser[ItemChunk] = "*" ~> ((elem <~ not("[/list]" | "^\\s*\\*".r))*) ~ elem ^^ {
+    case c ~ e => new ItemChunk(c ++ Seq(e))
   }
   
   def list:Parser[ListChunk] = p("[list " ~> nonBracket <~"]" | "[list]") ~ (item+) <~ "[/list]" ^^ {
@@ -119,6 +119,8 @@ class TubainaParser(bookName:String) extends RegexParsers {
   def center:Parser[CenteredParagraphChunk] = "[center]" ~> ("[^\\[]+".r) <~ "[/center]" ^^ (x => new CenteredParagraphChunk(x))
 
   def todo:Parser[TodoChunk] = "(?i)\\[todo ".r ~> nonBracket <~ "]" ^^ (x => new TodoChunk(x))
+  
+  def index:Parser[IndexChunk] = "(?i)\\[index ".r ~> nonBracket <~ "]" ^^ (x => new IndexChunk(x))
   
   def elem:Parser[Chunk] = center | table | list | image | code | java | ruby | xml | paragraph | box | note | exercises | todo
   

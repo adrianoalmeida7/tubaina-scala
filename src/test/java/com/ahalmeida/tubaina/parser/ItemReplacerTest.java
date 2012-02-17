@@ -1,5 +1,6 @@
 package com.ahalmeida.tubaina.parser;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,29 +12,33 @@ import br.com.caelum.tubaina.Chunk;
 import br.com.caelum.tubaina.builder.ChunkSplitter;
 import br.com.caelum.tubaina.builder.replacer.Replacer;
 import br.com.caelum.tubaina.chunk.ItemChunk;
+import br.com.caelum.tubaina.chunk.ListChunk;
 import br.com.caelum.tubaina.parser.MockedParser;
 import br.com.caelum.tubaina.resources.Resource;
 
 public class ItemReplacerTest {
 
 	private List<Resource> resources;
+	private Replacer replacer;
 
 	@Before
 	public void setUp() {
 		this.resources = new ArrayList<Resource>();
+		replacer = ReplacerAdapterFactory.replacerFor(ReplacerAdapterFactory.parser().list());
 	}
 
 	@Test
-	public void testJavaCodeInsideItem() {
-		String test = "* quero que o codigo java abaixo não tenha itens \n" + "[java]blah blah[/java]" + "[java] \n"
+	public void testJavaCodeInsideItem() throws Exception {
+		String test = "[list]* quero que o codigo java abaixo não tenha itens \n" + "[java]blah blah[/java]" + "[java] \n"
 				+ "/**\n" + " * texto qualquer\n\n" + " *outro comentario\n" + "[/java]\n"
-				+ "  *mas que isso seja outro item";
-		Replacer replacer = ReplacerAdapterFactory.replacerFor(ReplacerAdapterFactory.parser().item());
+				+ "  *mas que isso seja outro item[/list]";
+		
 		List<Chunk> chunks = new ArrayList<Chunk>();
-		while (!test.equals("")) {
-			System.out.println("----\n" + test);
-			test = replacer.execute(test, chunks);
-		}
+		replacer.execute(test, chunks);
+		Field body = ListChunk.class.getDeclaredField("body");
+		body.setAccessible(true);
+		chunks = (List<Chunk>) body.get(chunks.get(0));
+		
 		MockedParser parser = new MockedParser();
 		Assert.assertEquals(2, chunks.size());
 		Assert.assertEquals(ItemChunk.class, chunks.get(0).getClass());
@@ -46,8 +51,8 @@ public class ItemReplacerTest {
 
 	@Test(expected = RuntimeException.class)
 	public void testItensWithParagraphs() throws Exception {
-		String test = "blah blah blah \n    *uma lista, com coisas...\n  * outra lista";
+		String test = "[list]blah blah blah \n    *uma lista, com coisas...\n  * outra lista[/list]";
 
-		new ChunkSplitter(resources, "list").splitChunks(test);
+		replacer.execute(test, new ArrayList<Chunk>());
 	}
 }
