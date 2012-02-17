@@ -10,6 +10,9 @@ import br.com.caelum.tubaina.Section
 import br.com.caelum.tubaina.Book
 import scala.annotation.varargs
 import br.com.caelum.tubaina.TubainaException
+import br.com.caelum.tubaina.resources.ResourceLocator
+import javax.imageio.ImageIO
+import java.io.IOException
 
 class TubainaParser(bookName:String) extends RegexParsers {
 
@@ -38,7 +41,7 @@ class TubainaParser(bookName:String) extends RegexParsers {
       case name ~ None => new Section(name.trim(), Seq())
     }
 
-  def exercises:Parser[ExerciseChunk] = "[exercises]" ~> (question+) <~ "[/exercises]" ^^ {
+  def exercises:Parser[ExerciseChunk] = "[exercise]" ~> (question+) <~ "[/exercise]" ^^ {
     case questions => new ExerciseChunk(questions)
   }
   
@@ -81,6 +84,19 @@ class TubainaParser(bookName:String) extends RegexParsers {
   }
   
   def note:Parser[NoteChunk] = "[note]" ~> content <~ "[/note]" ^^ (x => new NoteChunk(Seq(), x))
+
+  def image:Parser[ImageChunk] = "[img " ~> "([^ \t\\]])+".r ~ (nonBracket?) <~ "]" ^^ {
+    case path ~ opts => 
+      val image = ResourceLocator.getInstance().getFile(path);
+		val width = 
+		  try {
+			ImageIO.read(image).getWidth();
+		  } catch {
+		    case e:IOException => throw new TubainaException("Image not existant", e)
+		    case e:NullPointerException => throw new TubainaException(path + " is not a valid image"); 
+		  }
+      new ImageChunk(path, opts.getOrElse("").trim(), width) 
+  }
   
   def item:Parser[ItemChunk] = "\\*".r ~> "((?!^\\s*\\*|\\[/?list\\]).)+".r ~ (list?) ^^ {
     case x ~ lst => new ItemChunk(parseAll(content, x).get ++ lst)
@@ -102,7 +118,9 @@ class TubainaParser(bookName:String) extends RegexParsers {
   
   def center:Parser[CenteredParagraphChunk] = "[center]" ~> ("[^\\[]+".r) <~ "[/center]" ^^ (x => new CenteredParagraphChunk(x))
 
-  def elem:Parser[Chunk] = center | table | list | code | java | ruby | xml | paragraph | box | note | exercises
+  def todo:Parser[TodoChunk] = "(?i)\\[todo ".r ~> nonBracket <~ "]" ^^ (x => new TodoChunk(x))
+  
+  def elem:Parser[Chunk] = center | table | list | image | code | java | ruby | xml | paragraph | box | note | exercises | todo
   
   def content:Parser[Seq[Chunk]] = elem+
 

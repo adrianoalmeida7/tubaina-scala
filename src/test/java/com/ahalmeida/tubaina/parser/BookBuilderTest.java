@@ -206,7 +206,7 @@ public class BookBuilderTest {
 		Assert.assertEquals("\nAlgum corpo de texto\nque é preformatado\n", chunks.get(0).getContent(parser));
 	}
 
-	@Test @Ignore
+	@Test
 	public void testImageChunk() throws Exception {
 		List<Chapter> chapters = getChapters("[chapter  Capítulo cheio de Chunks]\n" + "[section secao]"
 				+ "\n\n[img   src/test/resources/baseJpgImage.jpg w=30 \"Descrição\"   ]\n\n");
