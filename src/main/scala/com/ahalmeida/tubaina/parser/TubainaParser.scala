@@ -72,17 +72,24 @@ class TubainaParser(bookName:String) extends RegexParsers {
     case "[ruby]" ~ content => new RubyChunk(content, "")
     case opts ~ content => new RubyChunk(content, opts)
   }
+  def xml:Parser[XmlChunk] = p("[xml " ~> nonBracket <~"]" | "[xml]") ~ verbose(nonBracket) <~ "[/xml]" ^^ {
+    case "[xml]" ~ content => new XmlChunk("", content)
+    case opts ~ content => new XmlChunk(opts, content)
+  }
   def box:Parser[BoxChunk] = p("[box " ~> nonBracket <~ "]") ~ content <~ "[/box]" ^^ {
     case title ~ chunks => new BoxChunk(title, chunks)
   }
   
   def note:Parser[NoteChunk] = "[note]" ~> content <~ "[/note]" ^^ (x => new NoteChunk(Seq(), x))
   
-  def item:Parser[ItemChunk] = "^\\s*\\* ".r ~> "(.(?!^\\s*\\*|\\[/list\\]))+.".r ^^ {
+  def item:Parser[ItemChunk] = "\\*".r ~> "((?!^\\s*\\*|\\[/?list\\]).)+".r ^^ {
     x => new ItemChunk(parseAll(content, x).get)
   }
   
-  def list:Parser[ListChunk] = "[list]" ~> (item+) <~ "[/list]" ^^ (x => new ListChunk("", x))
+  def list:Parser[ListChunk] = p("[list " ~> nonBracket <~"]" | "[list]") ~ ((item|list)+) <~ "[/list]" ^^ {
+    case "[list]" ~ x => new ListChunk("", x) 
+    case opts ~ x => new ListChunk(opts, x) 
+  }
   
   def col:Parser[TableColumnChunk] = "[col]" ~> content <~ "[/col]" ^^ (x => new TableColumnChunk(x))
     
@@ -92,7 +99,7 @@ class TubainaParser(bookName:String) extends RegexParsers {
   
   def center:Parser[CenteredParagraphChunk] = "[center]" ~> ("[^\\[]+".r) <~ "[/center]" ^^ (x => new CenteredParagraphChunk(x))
 
-  def elem:Parser[Chunk] = center | table | list | code | java | ruby | paragraph | box | note | exercises
+  def elem:Parser[Chunk] = center | table | list | code | java | ruby | xml | paragraph | box | note | exercises
   
   def content:Parser[Seq[Chunk]] = elem+
 
