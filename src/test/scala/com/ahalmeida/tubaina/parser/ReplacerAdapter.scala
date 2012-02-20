@@ -4,6 +4,7 @@ import br.com.caelum.tubaina.Chunk
 import java.util.List
 import scala.util.parsing.combinator.Parsers
 import br.com.caelum.tubaina.TubainaException
+import scala.collection.JavaConversions._
 
 object ReplacerAdapterFactory {
   val parser = new TubainaParser("")
@@ -15,11 +16,18 @@ object ReplacerAdapterFactory {
 	      chunks.add(ps)
 	      text.substring(rest.offset)
 	    case NoSuccess(msg, input) =>
-	      throw new TubainaException(msg)
+	      throw new TubainaException(msg + input.source.subSequence(Math.max(input.offset - 7, 0), input.source.length()))
 	  }
 	}
 
 	def accepts(text:String) = parse(p, text).successful
+  }
+  
+  def parseContent(text:String):List[Chunk] = parse(content, text) match {
+       case Success(ps, rest) =>
+         ps
+	   case NoSuccess(msg, input) =>
+	      throw new TubainaException(msg + input.source.subSequence(Math.max(input.offset - 7, 0), input.source.length()))
   }
 	
 }

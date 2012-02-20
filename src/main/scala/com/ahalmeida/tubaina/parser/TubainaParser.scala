@@ -41,12 +41,16 @@ class TubainaParser(bookName:String) extends RegexParsers {
       case name ~ None => new Section(name.trim(), Seq())
     }
 
-  def exercises:Parser[ExerciseChunk] = "[exercise]" ~> (question+) <~ "[/exercise]" ^^ {
+  def exercises:Parser[ExerciseChunk] = "[exercise]" ~> ((question|todo)+) <~ "[/exercise]" ^^ {
     case questions => new ExerciseChunk(questions)
   }
   
-  def question:Parser[QuestionChunk] = "[question]" ~> content ~ (answer?) <~ "[/question]" ^^ {
-    case content ~ answer => new QuestionChunk(content ++ answer)
+  def question:Parser[QuestionChunk] = "[question]" ~> (content ~ (answer?) | (answer?) ~ content) <~ "[/question]" ^^ {
+    case content ~ answer => (content, answer) match {
+      case (c:List[Chunk], a:Option[AnswerChunk]) => new QuestionChunk(c ++ a)
+      case (Some(a:Chunk), c:List[Chunk]) => new QuestionChunk(a :: c)
+      case (None, c:List[Chunk]) => new QuestionChunk(c)
+    }
   }
   
   def answer:Parser[AnswerChunk] = "[answer]" ~> content <~ "[/answer]" ^^ {
@@ -98,8 +102,8 @@ class TubainaParser(bookName:String) extends RegexParsers {
       new ImageChunk(path, opts.getOrElse("").trim(), width) 
   }
   
-  def item:Parser[ItemChunk] = "*" ~> ((elem <~ not("[/list]" | "^\\s*\\*".r))*) ~ elem ^^ {
-    case c ~ e => new ItemChunk(c ++ Seq(e))
+  def item:Parser[ItemChunk] = "*" ~> elem ~ ((not("[/list]" | "^\\s*\\*".r) ~> elem)*) ^^ {
+    case e ~ c => new ItemChunk(e :: c)
   }
   
   def list:Parser[ListChunk] = p("[list " ~> nonBracket <~"]" | "[list]") ~ (item+) <~ "[/list]" ^^ {
@@ -109,9 +113,9 @@ class TubainaParser(bookName:String) extends RegexParsers {
   
   def col:Parser[TableColumnChunk] = "[col]" ~> content <~ "[/col]" ^^ (x => new TableColumnChunk(x))
     
-  def row:Parser[TableRowChunk] = "[row]" ~> (col+) <~ "[/row]" ^^ (x => new TableRowChunk(x))
+  def row:Parser[TableRowChunk] = "[row]" ~> ((col|todo)+) <~ "[/row]" ^^ (x => new TableRowChunk(x))
   
-  def table:Parser[TableChunk] = p("[table " ~> nonBracket <~"]" | "[table]") ~ (row+) <~ "[/table]" ^^ {
+  def table:Parser[TableChunk] = p("[table " ~> nonBracket <~"]" | "[table]") ~ ((row|todo)+) <~ "[/table]" ^^ {
     case "[table]" ~ x => new TableChunk("", x) 
     case opts ~ x => new TableChunk(opts, x) 
   }
@@ -122,7 +126,7 @@ class TubainaParser(bookName:String) extends RegexParsers {
   
   def index:Parser[IndexChunk] = "(?i)\\[index ".r ~> nonBracket <~ "]" ^^ (x => new IndexChunk(x))
   
-  def elem:Parser[Chunk] = center | table | list | image | code | java | ruby | xml | paragraph | box | note | exercises | todo
+  def elem:Parser[Chunk] = center | table | list | image | code | java | ruby | xml | box | note | exercises | todo | index | paragraph 
   
   def content:Parser[Seq[Chunk]] = elem+
 
@@ -133,9 +137,9 @@ class TubainaParser(bookName:String) extends RegexParsers {
 	  val chapters = toParse.map { chap =>
       parseAll(chapter, chap) match {
 	    case Success(r, q) => r
-	    case NoSuccess(message, input) => message match {
-	      case _ => throw new TubainaException(message)
-	    }
+	    case NoSuccess(message, input) => 
+	      throw new TubainaException(message)
+	    
 	  }
     }
     

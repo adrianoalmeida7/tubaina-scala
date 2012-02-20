@@ -1,5 +1,7 @@
 package com.ahalmeida.tubaina.parser;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +13,7 @@ import br.com.caelum.tubaina.Chunk;
 import br.com.caelum.tubaina.TubainaException;
 import br.com.caelum.tubaina.builder.ChunksMaker;
 import br.com.caelum.tubaina.builder.ChunksMakerBuilder;
+import br.com.caelum.tubaina.builder.replacer.Replacer;
 import br.com.caelum.tubaina.chunk.AnswerChunk;
 import br.com.caelum.tubaina.chunk.BoxChunk;
 import br.com.caelum.tubaina.chunk.CenteredParagraphChunk;
@@ -70,13 +73,12 @@ public class ChunksMakerBuilderTest {
 	}
 
 	@Test
-	public void testChunksMakerBuilderForAnswer() {
-		ChunksMaker maker = new ChunksMakerBuilder(resources).build("answer");
+	public void testChunksMakerBuilderForAnswer() throws Exception{
 		String text = exampleBox + exampleCode + exampleImage + exampleJava
 				+ exampleList + exampleNote + exampleXml + exampleIndex
 				+ exampleTodo + exampleRuby + exampleTable
 				+ exampleCenteredText + exampleParagraph;
-		List<Chunk> chunks = maker.make(text);
+		List<Chunk> chunks = createChunks("[answer]" + text + "[/answer]", ReplacerAdapterFactory.replacerFor(ReplacerAdapterFactory.parser().answer()));
 		Assert.assertEquals(13, chunks.size());
 		Assert.assertEquals(BoxChunk.class, chunks.get(0).getClass());
 		Assert.assertEquals(CodeChunk.class, chunks.get(1).getClass());
@@ -95,13 +97,12 @@ public class ChunksMakerBuilderTest {
 	}
 
 	@Test
-	public void testChunksMakerBuilderForBox() {
-		ChunksMaker maker = new ChunksMakerBuilder(resources).build("box");
+	public void testChunksMakerBuilderForBox() throws Exception {
 		String text = exampleCode + exampleImage + exampleJava + exampleList
 				+ exampleNote + exampleXml + exampleIndex + exampleTodo
 				+ exampleRuby + exampleTable + exampleCenteredText
 				+ exampleParagraph;
-		List<Chunk> chunks = maker.make(text);
+		List<Chunk> chunks = createChunks("[box title]" + text + "[/box]", ReplacerAdapterFactory.replacerFor(ReplacerAdapterFactory.parser().box()));
 		Assert.assertEquals(12, chunks.size());
 		Assert.assertEquals(CodeChunk.class, chunks.get(0).getClass());
 		Assert.assertEquals(ImageChunk.class, chunks.get(1).getClass());
@@ -119,23 +120,21 @@ public class ChunksMakerBuilderTest {
 	}
 
 	@Test
-	public void testChunksMakerBuilderForExercise() {
-		ChunksMaker maker = new ChunksMakerBuilder(resources).build("exercise");
+	public void testChunksMakerBuilderForExercise() throws Exception {
 		String text = exampleTodo + exampleQuestion;
-		List<Chunk> chunks = maker.make(text);
+		List<Chunk> chunks = createChunks("[exercise]" + text + "[/exercise]", ReplacerAdapterFactory.replacerFor(ReplacerAdapterFactory.parser().exercises()));
 		Assert.assertEquals(2, chunks.size());
 		Assert.assertEquals(TodoChunk.class, chunks.get(0).getClass());
 		Assert.assertEquals(QuestionChunk.class, chunks.get(1).getClass());
 	}
 
 	@Test
-	public void testChunksMakerBuilderForItem() {
-		ChunksMaker maker = new ChunksMakerBuilder(resources).build("item");
+	public void testChunksMakerBuilderForItem() throws Exception {
 		String text = exampleBox + exampleCode + exampleExercise + exampleImage
 				+ exampleJava + exampleList + exampleNote + exampleXml
 				+ exampleIndex + exampleTodo + exampleRuby
 				+ exampleCenteredText + exampleParagraph;
-		List<Chunk> chunks = maker.make(text);
+		List<Chunk> chunks = createChunks("* " + text, ReplacerAdapterFactory.replacerFor(ReplacerAdapterFactory.parser().item()));
 		Assert.assertEquals(13, chunks.size());
 		Assert.assertEquals(BoxChunk.class, chunks.get(0).getClass());
 		Assert.assertEquals(CodeChunk.class, chunks.get(1).getClass());
@@ -154,21 +153,19 @@ public class ChunksMakerBuilderTest {
 	}
 
 	@Test
-	public void testChunksMakerBuilderForList() {
-		ChunksMaker maker = new ChunksMakerBuilder(resources).build("list");
+	public void testChunksMakerBuilderForList() throws Exception {
 		String text = exampleListItem;
-		List<Chunk> chunks = maker.make(text);
+		List<Chunk> chunks = createChunks("[list]" + text + "[/list]", ReplacerAdapterFactory.replacerFor(ReplacerAdapterFactory.parser().list()));
 		Assert.assertEquals(1, chunks.size());
 		Assert.assertEquals(ItemChunk.class, chunks.get(0).getClass());
 	}
 
 	@Test
-	public void testChunksMakerBuilderForNote() {
-		ChunksMaker maker = new ChunksMakerBuilder(resources).build("note");
+	public void testChunksMakerBuilderForNote() throws Exception {
 		String text = exampleCode + exampleImage + exampleJava + exampleList
 				+ exampleXml + exampleIndex + exampleTodo + exampleRuby
 				+ exampleTable + exampleCenteredText + exampleParagraph;
-		List<Chunk> chunks = maker.make(text);
+		List<Chunk> chunks = createChunks("[note]" + text + "[/note]", ReplacerAdapterFactory.replacerFor(ReplacerAdapterFactory.parser().note()));
 		Assert.assertEquals(11, chunks.size());
 		Assert.assertEquals(CodeChunk.class, chunks.get(0).getClass());
 		Assert.assertEquals(ImageChunk.class, chunks.get(1).getClass());
@@ -185,13 +182,12 @@ public class ChunksMakerBuilderTest {
 	}
 
 	@Test
-	public void testChunksMakerBuilderForQuestion() {
-		ChunksMaker maker = new ChunksMakerBuilder(resources).build("question");
+	public void testChunksMakerBuilderForQuestion() throws Exception {
 		String text = exampleAnswer + exampleBox + exampleCode + exampleImage
 				+ exampleJava + exampleList + exampleNote + exampleXml
 				+ exampleIndex + exampleTodo + exampleRuby + exampleTable
 				+ exampleCenteredText + exampleParagraph;
-		List<Chunk> chunks = maker.make(text);
+		List<Chunk> chunks = createChunks("[question]" + text + "[/question]", ReplacerAdapterFactory.replacerFor(ReplacerAdapterFactory.parser().question()));
 		Assert.assertEquals(14, chunks.size());
 		Assert.assertEquals(AnswerChunk.class, chunks.get(0).getClass());
 		Assert.assertEquals(BoxChunk.class, chunks.get(1).getClass());
@@ -211,32 +207,29 @@ public class ChunksMakerBuilderTest {
 	}
 
 	@Test
-	public void testChunksMakerBuilderForTable() {
-		ChunksMaker maker = new ChunksMakerBuilder(resources).build("table");
+	public void testChunksMakerBuilderForTable() throws Exception {
 		String text = exampleTableRow + exampleTodo;
-		List<Chunk> chunks = maker.make(text);
+		List<Chunk> chunks = createChunks("[table]" + text + "[/table]", ReplacerAdapterFactory.replacerFor(ReplacerAdapterFactory.parser().table()));
 		Assert.assertEquals(2, chunks.size());
 		Assert.assertEquals(TableRowChunk.class, chunks.get(0).getClass());
 		Assert.assertEquals(TodoChunk.class, chunks.get(1).getClass());
 	}
 
 	@Test
-	public void testChunksMakerBuilderForTableRow() {
-		ChunksMaker maker = new ChunksMakerBuilder(resources).build("row");
+	public void testChunksMakerBuilderForTableRow() throws Exception {
 		String text = exampleTableColumn + exampleTodo;
-		List<Chunk> chunks = maker.make(text);
+		List<Chunk> chunks = createChunks("[row]" + text + "[/row]", ReplacerAdapterFactory.replacerFor(ReplacerAdapterFactory.parser().row()));
 		Assert.assertEquals(2, chunks.size());
 		Assert.assertEquals(TableColumnChunk.class, chunks.get(0).getClass());
 		Assert.assertEquals(TodoChunk.class, chunks.get(1).getClass());
 	}
 
 	@Test
-	public void testChunksMakerBuilderForTableColumn() {
-		ChunksMaker maker = new ChunksMakerBuilder(resources).build("col");
+	public void testChunksMakerBuilderForTableColumn() throws Exception {
 		String text = exampleBox + exampleCode + exampleExercise + exampleImage
 				+ exampleJava + exampleList + exampleNote + exampleXml
 				+ exampleTodo + exampleRuby + exampleParagraph;
-		List<Chunk> chunks = maker.make(text);
+		List<Chunk> chunks = createChunks("[col]" + text + "[/col]", ReplacerAdapterFactory.replacerFor(ReplacerAdapterFactory.parser().col()));
 		Assert.assertEquals(11, chunks.size());
 		Assert.assertEquals(BoxChunk.class, chunks.get(0).getClass());
 		Assert.assertEquals(CodeChunk.class, chunks.get(1).getClass());
@@ -253,12 +246,11 @@ public class ChunksMakerBuilderTest {
 
 	@Test
 	public void testChunksMakerBuilderForAll() {
-		ChunksMaker maker = new ChunksMakerBuilder(resources).build("all");
 		String text = exampleBox + exampleCode + exampleExercise + exampleImage
 				+ exampleJava + exampleList + exampleNote + exampleXml
 				+ exampleIndex + exampleTodo + exampleRuby + exampleTable
 				+ exampleCenteredText + exampleParagraph;
-		List<Chunk> chunks = maker.make(text);
+		List<Chunk> chunks = ReplacerAdapterFactory.parseContent(text);
 		Assert.assertEquals(14, chunks.size());
 		Assert.assertEquals(BoxChunk.class, chunks.get(0).getClass());
 		Assert.assertEquals(CodeChunk.class, chunks.get(1).getClass());
@@ -279,10 +271,8 @@ public class ChunksMakerBuilderTest {
 
 	@Test(expected=TubainaException.class)
 	public void testChunksMakerBuilderForAllDoesntAcceptQuestionTagOutsideExercise() {
-		ChunksMaker chunksMaker = new ChunksMakerBuilder(resources)
-				.build("all");
 		String exercise = exampleQuestion;
-		List<Chunk> list = chunksMaker.make(exercise);
+		List<Chunk> list = ReplacerAdapterFactory.parseContent(exercise);
 		for (Chunk chunk : list) {
 			System.out.println(chunk.getClass().getName());
 		}
@@ -290,11 +280,32 @@ public class ChunksMakerBuilderTest {
 	}
 
 	@Test(expected=TubainaException.class)
-	public void testChunksMakerBuilderDoesntAcceptNoteInsideExerciseOutsideQuestion() {
-		ChunksMaker chunksMaker = new ChunksMakerBuilder(resources)
-				.build("exercise");
+	public void testChunksMakerBuilderDoesntAcceptNoteInsideExerciseOutsideQuestion() throws Exception{
 		String exercise = exampleNote + exampleQuestion;
-		chunksMaker.make(exercise);
+		createChunks("[exercise]" + exercise + "[/exercise]", ReplacerAdapterFactory.replacerFor(ReplacerAdapterFactory.parser().exercises()));
 		Assert.fail("Should not accept notes inside exercise tag but outside question tag");
+	}
+	
+	private List<Chunk> createChunks(String text, Replacer replacer) throws Exception {
+		
+		List<Chunk> chunks = new ArrayList<Chunk>();
+		Assert.assertEquals("", replacer.execute(text, chunks).trim());
+		Chunk chunk = chunks.get(0);
+		
+		if (chunk instanceof NoteChunk) {
+			Field body = chunk.getClass().getDeclaredField("body");
+			body.setAccessible(true);
+			return (List<Chunk>) body.get(chunk);
+		}
+		for (Field field : chunk.getClass().getDeclaredFields()) {
+			if (field.getGenericType() instanceof ParameterizedType) {
+				ParameterizedType type = (ParameterizedType) field.getGenericType();
+				field.setAccessible(true);
+				if (Chunk.class.equals(type.getActualTypeArguments()[0])) {
+					return (List<Chunk>) field.get(chunk);
+				}
+			}
+		}
+		throw new AssertionError("O chunk não tem field List<Chunk>");
 	}
 }
